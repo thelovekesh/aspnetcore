@@ -85,9 +85,6 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2
 
             _context = context;
 
-            // Capture the ExecutionContext before dispatching HTTP/2 middleware. Will be restored by streams when processing request
-            _context.InitialExecutionContext = ExecutionContext.Capture();
-
             _frameWriter = new Http2FrameWriter(
                 context.Transport.Output,
                 context.ConnectionContext,

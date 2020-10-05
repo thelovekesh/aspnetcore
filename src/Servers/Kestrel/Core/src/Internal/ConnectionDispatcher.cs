@@ -43,6 +43,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal
             {
                 try
                 {
+                    var acceptLoopExecutionContext = ExecutionContext.Capture();
+
                     while (true)
                     {
                         var connection = await listener.AcceptAsync();
@@ -56,7 +58,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal
                         // Add the connection to the connection manager before we queue it for execution
                         var id = Interlocked.Increment(ref _lastConnectionId);
                         var kestrelConnection = new KestrelConnection<T>(
-                            id, _serviceContext, _transportConnectionManager, _connectionDelegate, connection, Log);
+                            id, _serviceContext, acceptLoopExecutionContext, _transportConnectionManager, _connectionDelegate, connection, Log);
 
                         _transportConnectionManager.AddConnection(id, kestrelConnection);
 

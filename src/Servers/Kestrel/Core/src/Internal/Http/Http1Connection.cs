@@ -6,6 +6,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Pipelines;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http.Features;
@@ -637,6 +638,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
         protected override void BeginRequestProcessing()
         {
+            // No need to restore the ExecutionContext if we just captured it and haven't run middleware yet.
+            // Check before Reset() which increments _requestCount.
+            if (_requestCount > 0)
+            {
+                // Clear any AsyncLocals set during the request; back to a clean state ready for next request
+                ExecutionContext.Restore(ConnectionExecutionContext);
+            }
+
             // Reset the features and timeout.
             Reset();
             TimeoutControl.SetTimeout(_keepAliveTicks, TimeoutReason.KeepAlive);

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Connections.Features;
@@ -36,7 +37,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal
                 MemoryPool = memoryPoolFeature?.MemoryPool ?? System.Buffers.MemoryPool<byte>.Shared,
                 Transport = connectionContext.Transport,
                 LocalEndPoint = connectionContext.LocalEndPoint as IPEndPoint,
-                RemoteEndPoint = connectionContext.RemoteEndPoint as IPEndPoint
+                RemoteEndPoint = connectionContext.RemoteEndPoint as IPEndPoint,
+                InitialExecutionContext = ExecutionContext.Capture(),
             };
 
             var connection = new HttpConnection(httpConnectionContext);

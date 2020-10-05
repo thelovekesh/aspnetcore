@@ -3,11 +3,11 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
 using Microsoft.AspNetCore.Testing;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -45,7 +45,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
             var mock = new Mock<DefaultConnectionContext>() { CallBase = true };
             mock.Setup(m => m.ConnectionId).Returns(connectionId);
             var transportConnectionManager = new TransportConnectionManager(httpConnectionManager);
-            var httpConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, transportConnectionManager, _ => Task.CompletedTask, mock.Object, Mock.Of<IKestrelTrace>());
+            var httpConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, ExecutionContext.Capture(), transportConnectionManager, _ => Task.CompletedTask, mock.Object, Mock.Of<IKestrelTrace>());
             transportConnectionManager.AddConnection(0, httpConnection);
 
             var connectionCount = 0;

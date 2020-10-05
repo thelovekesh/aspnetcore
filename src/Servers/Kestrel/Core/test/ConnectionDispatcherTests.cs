@@ -30,7 +30,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
             var connection = new Mock<DefaultConnectionContext> { CallBase = true }.Object;
             connection.ConnectionClosed = new CancellationToken(canceled: true);
             var transportConnectionManager = new TransportConnectionManager(serviceContext.ConnectionManager);
-            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, transportConnectionManager, _ => tcs.Task, connection, serviceContext.Log);
+            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, ExecutionContext.Capture(), transportConnectionManager, _ => tcs.Task, connection, serviceContext.Log);
             transportConnectionManager.AddConnection(0, kestrelConnection);
 
             var task = kestrelConnection.ExecuteAsync();
@@ -81,7 +81,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
             var connection = new Mock<DefaultConnectionContext> { CallBase = true }.Object;
             connection.ConnectionClosed = new CancellationToken(canceled: true);
             var transportConnectionManager = new TransportConnectionManager(serviceContext.ConnectionManager);
-            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, transportConnectionManager, _ => Task.CompletedTask, connection, serviceContext.Log);
+            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, ExecutionContext.Capture(), transportConnectionManager, _ => Task.CompletedTask, connection, serviceContext.Log);
             transportConnectionManager.AddConnection(0, kestrelConnection);
             var completeFeature = kestrelConnection.TransportConnection.Features.Get<IConnectionCompleteFeature>();
 
@@ -103,7 +103,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
             var connection = new Mock<DefaultConnectionContext> { CallBase = true }.Object;
             connection.ConnectionClosed = new CancellationToken(canceled: true);
             var transportConnectionManager = new TransportConnectionManager(serviceContext.ConnectionManager);
-            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, transportConnectionManager, _ => Task.CompletedTask, connection, serviceContext.Log);
+            var kestrelConnection = new KestrelConnection<ConnectionContext>(0, serviceContext, ExecutionContext.Capture(), transportConnectionManager, _ => Task.CompletedTask, connection, serviceContext.Log);
             transportConnectionManager.AddConnection(0, kestrelConnection);
             var completeFeature = kestrelConnection.TransportConnection.Features.Get<IConnectionCompleteFeature>();
 

@@ -14,11 +14,12 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure
 
         public KestrelConnection(long id,
                                  ServiceContext serviceContext,
+                                 ExecutionContext acceptLoopExecutionContext,
                                  TransportConnectionManager transportConnectionManager,
                                  Func<T, Task> connectionDelegate,
                                  T connectionContext,
                                  IKestrelTrace logger)
-            : base(id, serviceContext, transportConnectionManager, logger)
+            : base(id, serviceContext, acceptLoopExecutionContext, transportConnectionManager, logger)
         {
             _connectionDelegate = connectionDelegate;
             _transportConnection = connectionContext;
@@ -40,6 +41,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure
 
             try
             {
+                ExecutionContext.Restore(_acceptLoopExecutionContext);
+
                 KestrelEventSource.Log.ConnectionQueuedStop(connectionContext);
 
                 Logger.ConnectionStart(connectionContext.ConnectionId);
