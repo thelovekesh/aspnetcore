@@ -1,12 +1,16 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
 using Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests.TestTransport;
 using Microsoft.AspNetCore.Testing;
@@ -24,45 +28,92 @@ namespace Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests
         }
 
         [Fact]
-        public async Task EmitsConnectionStartAndStop()
+        public async Task EmitsStartAndStopEventsWithActivityIds()
         {
             string connectionId = null;
             string requestId = null;
             int port;
+
             await using (var server = new TestServer(context =>
             {
                 connectionId = context.Features.Get<IHttpConnectionFeature>().ConnectionId;
                 requestId = context.TraceIdentifier;
                 return Task.CompletedTask;
-            }, new TestServiceContext(LoggerFactory)))
+            },
+            new TestServiceContext(LoggerFactory),
+            listenOptions =>
+            {
+                listenOptions.Protocols = HttpProtocols.Http2;
+            }))
             {
                 port = server.Port;
-                using (var connection = server.CreateConnection())
+
+                var connectionCount = 0;
+                using var connection = server.CreateConnection();
+
+                using var socketsHandler = new SocketsHttpHandler()
                 {
-                    await connection.SendAll("GET / HTTP/1.1",
-                        "Host:",
-                        "",
-                        "")
-                        .DefaultTimeout();
-                    await connection.Receive("HTTP/1.1 200");
-                }
+                    ConnectCallback = (_, _) =>
+                    {
+                        if (connectionCount != 0)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
+                        connectionCount++;
+                        return new ValueTask<Stream>(connection.Stream);
+                    },
+                };
+
+                using var httpClient = new HttpClient(socketsHandler);
+
+                using var httpRequsetMessage = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri("http://localhost/"),
+                    Version = new Version(2, 0),
+                    VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+                };
+
+                using var responseMessage = await httpClient.SendAsync(httpRequsetMessage);
+
+                responseMessage.EnsureSuccessStatusCode();
             }
 
             // capture list here as other tests executing in parallel may log events
             Assert.NotNull(connectionId);
             Assert.NotNull(requestId);
 
+            Guid connectionQueuedStartActivityId = Guid.Empty;
+
             var events = _listener.EventData.Where(e => e != null && GetProperty(e, "connectionId") == connectionId).ToList();
 
             {
-                var start = Assert.Single(events, e => e.EventName == "ConnectionStart");
-                Assert.All(new[] { "connectionId", "remoteEndPoint", "localEndPoint" }, p => Assert.Contains(p, start.PayloadNames));
-                Assert.Equal($"127.0.0.1:{port}", GetProperty(start, "localEndPoint"));
+                var connectionQueuedStart = Assert.Single(events, e => e.EventName == "ConnectionQueuedStart");
+                Assert.All(new[] { "connectionId", "remoteEndPoint", "localEndPoint" }, p => Assert.Contains(p, connectionQueuedStart.PayloadNames));
+                Assert.Equal($"127.0.0.1:{port}", GetProperty(connectionQueuedStart, "localEndPoint"));
+
+                //Assert.NotEqual(Guid.Empty, connectionQueuedStart.ActivityId);
+                //Assert.Equal(Guid.Empty, connectionQueuedStart.RelatedActivityId);
+
+                //connectionQueuedStartActivityId = connectionQueuedStart.ActivityId;
             }
             {
-                var stop = Assert.Single(events, e => e.EventName == "ConnectionStop");
-                Assert.All(new[] { "connectionId" }, p => Assert.Contains(p, stop.PayloadNames));
-                Assert.Same(KestrelEventSource.Log, stop.EventSource);
+                var connectionQueuedStop = Assert.Single(events, e => e.EventName == "ConnectionQueuedStop");
+                Assert.All(new[] { "connectionId", "remoteEndPoint", "localEndPoint" }, p => Assert.Contains(p, connectionQueuedStop.PayloadNames));
+                Assert.Equal($"127.0.0.1:{port}", GetProperty(connectionQueuedStop, "localEndPoint"));
+
+                //Assert.Equal(connectionQueuedStartActivityId, connectionQueuedStop.ActivityId);
+                //Assert.Equal(Guid.Empty, connectionQueuedStop.RelatedActivityId);
+            }
+            {
+                var connectionStart = Assert.Single(events, e => e.EventName == "ConnectionStart");
+                Assert.All(new[] { "connectionId", "remoteEndPoint", "localEndPoint" }, p => Assert.Contains(p, connectionStart.PayloadNames));
+                Assert.Equal($"127.0.0.1:{port}", GetProperty(connectionStart, "localEndPoint"));
+            }
+            {
+                var connectionStop = Assert.Single(events, e => e.EventName == "ConnectionStop");
+                Assert.All(new[] { "connectionId" }, p => Assert.Contains(p, connectionStop.PayloadNames));
+                Assert.Same(KestrelEventSource.Log, connectionStop.EventSource);
             }
             {
                 var requestStart = Assert.Single(events, e => e.EventName == "RequestStart");
