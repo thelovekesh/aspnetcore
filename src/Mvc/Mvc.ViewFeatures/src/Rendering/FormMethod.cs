@@ -3,9 +3,19 @@
 
 namespace Microsoft.AspNetCore.Mvc.Rendering
 {
+    /// <summary>
+    /// Enum representing the form method.
+    /// </summary>
     public enum FormMethod
     {
+        /// <summary>
+        /// Get form method.
+        /// </summary>
         Get,
+
+        /// <summary>
+        /// Post form method.
+        /// </summary>
         Post
     }
 }

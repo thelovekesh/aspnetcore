@@ -8,6 +8,9 @@ using System.Reflection;
 
 namespace Microsoft.AspNetCore.Mvc.ViewFeatures
 {
+    /// <summary>
+    /// Static class that helps evaluate expressions.
+    /// </summary>
     public static class ViewDataEvaluator
     {
         /// <summary>
