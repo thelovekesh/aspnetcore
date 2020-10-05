@@ -448,7 +448,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
                 ServiceContext = _serviceContext,
                 MemoryPool = _memoryPool,
                 Transport = _pair.Transport,
-                TimeoutControl = _mockTimeoutControl.Object
+                TimeoutControl = _mockTimeoutControl.Object,
+                InitialExecutionContext = ExecutionContext.Capture(),
             };
 
             _connection = new Http2Connection(httpConnectionContext);

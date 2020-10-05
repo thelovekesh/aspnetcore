@@ -65,7 +65,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Tests
                 ConnectionFeatures = connectionFeatures,
                 MemoryPool = _pipelineFactory,
                 TimeoutControl = _timeoutControl.Object,
-                Transport = pair.Transport
+                Transport = pair.Transport,
+                InitialExecutionContext = ExecutionContext.Capture(),
             };
 
             _http1Connection = new TestHttp1Connection(_http1ConnectionContext);

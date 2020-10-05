@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net.Http.HPack;
+using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Microsoft.AspNetCore.Http;
@@ -76,6 +77,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Performance
                 ServiceContext = serviceContext,
                 ConnectionFeatures = new FeatureCollection(),
                 TimeoutControl = new MockTimeoutControl(),
+                InitialExecutionContext = ExecutionContext.Capture(),
             });
 
             _requestHeadersEnumerator = new Http2HeadersEnumerator();
