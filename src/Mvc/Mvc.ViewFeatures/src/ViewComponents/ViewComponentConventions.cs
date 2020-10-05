@@ -17,7 +17,7 @@ namespace Microsoft.AspNetCore.Mvc.ViewComponents
         public static readonly string ViewComponentSuffix = "ViewComponent";
 
         /// <summary>
-        /// Gets the of a component.
+        /// Gets the name of a component.
         /// </summary>
         /// <param name="componentType"></param>
         /// <returns></returns>

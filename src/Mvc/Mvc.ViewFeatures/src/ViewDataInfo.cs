@@ -6,6 +6,9 @@ using System.Reflection;
 
 namespace Microsoft.AspNetCore.Mvc.ViewFeatures
 {
+    /// <summary>
+    /// Represents info about a <see cref="ViewDataDictionary"/> lookup which is evaluated when <see cref="Value"/> is read.
+    /// </summary>
     public class ViewDataInfo
     {
         private static readonly Func<object> _propertyInfoResolver = () => null;

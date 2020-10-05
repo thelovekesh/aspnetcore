@@ -316,6 +316,13 @@ namespace Microsoft.AspNetCore.Mvc.Rendering
             MergeAttributes(attributes, replaceExisting: false);
         }
 
+        /// <summary>
+        /// Merge an attribute dictionary.
+        /// </summary>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The value type.</typeparam>
+        /// <param name="attributes">The attributes.</param>
+        /// <param name="replaceExisting">Whether to replace existing attributes.</param>
         public void MergeAttributes<TKey, TValue>(IDictionary<TKey, TValue> attributes, bool replaceExisting)
         {
             // Perf: Avoid allocating enumerator for `attributes` if possible
