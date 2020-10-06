@@ -8,22 +8,29 @@ using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
 using Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests.TestTransport;
 using Microsoft.AspNetCore.Testing;
+using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests
 {
     public class EventSourceTests : LoggedTest
     {
-        private readonly TestEventListener _listener = new TestEventListener();
+        private TestEventListener _listener;// = new TestEventListener();
 
-        public EventSourceTests()
+        public override void Initialize(TestContext context, MethodInfo methodInfo, object[] testMethodArguments, ITestOutputHelper testOutputHelper)
         {
+            base.Initialize(context, methodInfo, testMethodArguments, testOutputHelper);
+
+            _listener = new TestEventListener(Logger);
             _listener.EnableEvents(KestrelEventSource.Log, EventLevel.Verbose);
         }
 
@@ -131,8 +138,14 @@ namespace Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests
 
         private class TestEventListener : EventListener
         {
+            private readonly ConcurrentQueue<EventSnapshot> _events = new ConcurrentQueue<EventSnapshot>();
+            private readonly ILogger _logger;
             private volatile bool _disposed;
-            private ConcurrentQueue<EventSnapshot> _events = new ConcurrentQueue<EventSnapshot>();
+
+            public TestEventListener(ILogger logger)
+            {
+                _logger = logger;
+            }
 
             public IEnumerable<EventSnapshot> EventData => _events;
 
@@ -140,6 +153,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.InMemory.FunctionalTests
             {
                 if (!_disposed)
                 {
+                    _logger.LogInformation("{event}", JsonSerializer.Serialize(eventData, new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }));
+
                     _events.Enqueue(new EventSnapshot(eventData));
                 }
             }

@@ -5,6 +5,7 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TestGroupName>InMemory.FunctionalTests</TestGroupName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);xUnit1003;xUnit1010;xUnit1013</NoWarn>
    </PropertyGroup>
 
   <ItemGroup>
@@ -28,5 +29,4 @@
     <Reference Include="Microsoft.AspNetCore.Server.Kestrel" />
     <Reference Include="Newtonsoft.Json" />
   </ItemGroup>
-
 </Project>
